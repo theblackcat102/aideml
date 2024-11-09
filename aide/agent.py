@@ -94,16 +94,16 @@ class Agent:
     @property
     def _prompt_environment(self):
         pkgs = [
-            "numpy",
-            "pandas",
-            "scikit-learn",
+            "numpy==1.26.2",
+            "pandas==2.1.4",
+            "scikit-learn==1.2.2",
             "statsmodels",
-            "xgboost",
-            "lightGBM",
-            "torch",
-            "torchvision",
+            "xgboost==2.1.2",
+            "lightgbm==4.5.0",
+            "torch==2.5.1",
             "torch-geometric",
             "bayesian-optimization",
+            "catboost==1.2.7",
             "timm",
         ]
         random.shuffle(pkgs)

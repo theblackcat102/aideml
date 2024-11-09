@@ -4,13 +4,15 @@ import json
 import logging
 import time
 import pathlib
-from .utils import FunctionSpec, OutputType, opt_messages_to_list
+import openai
+import json
+from .utils import FunctionSpec, OutputType, opt_messages_to_list, backoff_create
 from funcy import notnone, once, retry, select_values
 from openai import OpenAI, RateLimitError
 
 logger = logging.getLogger("aide")
 
-_client: OpenAI = None  # type: ignore
+_client: openai.OpenAI = None  # type: ignore
 
 OPENAI_TIMEOUT_EXCEPTIONS = (
     openai.RateLimitError,
@@ -24,8 +26,6 @@ def _setup_openai_client():
     global _client
     _client = openai.OpenAI(max_retries=0)
 
-
-@retry_exp
 def query(
     system_message: str | None,
     user_message: str | None,
@@ -76,6 +76,7 @@ def query(
     info = {
         "system_fingerprint": completion.system_fingerprint,
         "model": completion.model,
+        "req_time": req_time,
         "created": completion.created,
     }
     curr_dir = pathlib.Path().absolute()
@@ -87,6 +88,7 @@ def query(
                 'response': output,
                 'input_tokens': in_tokens,
                 'output_tokens': out_tokens,
+                **info,
                 **filtered_kwargs
             })+'\n')
 

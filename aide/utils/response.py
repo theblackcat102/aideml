@@ -4,6 +4,7 @@ import re
 import black
 from openai import OpenAI
 
+fixer_client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 def wrap_code(code: str, lang="python") -> str:
     """Wraps code with three backticks."""

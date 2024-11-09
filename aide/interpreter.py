@@ -84,7 +84,7 @@ class Interpreter:
     def __init__(
         self,
         working_dir: Path | str,
-        timeout: int = 3600,
+        timeout: int = 10800,
         format_tb_ipython: bool = False,
         agent_file_name: str = "runfile.py",
     ):
@@ -169,10 +169,18 @@ class Interpreter:
         # - result_outq: receive stdout/stderr from child
         # - event_outq: receive events from child (e.g. state:ready, state:finished)
         # trunk-ignore(mypy/var-annotated)
+        env_vars = dict(os.environ)  # Copy all current environment variables
+        # Optionally add or modify specific environment variables
+        env_vars.update({
+            'PYTHON_PATH': os.path.dirname(self.agent_file_name),
+            'WORKING_DIR': str(self.working_dir),
+            # Add any other environment variables you need
+        })
+
         self.code_inq, self.result_outq, self.event_outq = Queue(), Queue(), Queue()
         self.process = Process(
             target=self._run_session,
-            args=(self.code_inq, self.result_outq, self.event_outq),
+            args=(self.code_inq, self.result_outq, self.event_outq, env_vars),
         )
         self.process.start()
 

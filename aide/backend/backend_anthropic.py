@@ -1,6 +1,7 @@
 """Backend for Anthropic API."""
 import time
 import os
+import json
 import pathlib
 from typing import Union
 from .utils import FunctionSpec, OutputType, opt_messages_to_list, backoff_create
@@ -77,6 +78,7 @@ def query(
                 'response': output,
                 'input_tokens': in_tokens,
                 'output_tokens': out_tokens,
+                'req_time': req_time,
                 'stop_reason': message.stop_reason,
                 **filtered_kwargs
             })+'\n')

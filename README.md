@@ -16,8 +16,6 @@ Note, this is fork from AIDE where I apply the following changes:
 ```
 
 
-
-
 AIDE is the state-of-the-art agent on OpenAI's [MLE-bench](https://arxiv.org/pdf/2410.07095), a benchmark composed of 75 Kaggle machine learning tasks, where we achieved four times more medals compared to the runner-up agent architecture.
 
 In our own benchmark composed of over 60 Kaggle data science competitions, AIDE demonstrated impressive performance, surpassing 50% of Kaggle participants on average (see our [technical report](https://www.weco.ai/blog/technical-report) for details).

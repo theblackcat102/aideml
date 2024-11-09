@@ -4,6 +4,7 @@ Contains functions to manually generate a textual preview of some common file ty
 
 import json
 from pathlib import Path
+from typing import Tuple, Optional
 
 import humanize
 import pandas as pd

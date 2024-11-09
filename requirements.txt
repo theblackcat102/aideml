@@ -20,7 +20,7 @@ tqdm==4.66.2
 coolname>=2.2.0
 igraph>=0.11.3
 genson>=1.2.0
-
+catboost
 # agent requirements (packages that the agent might need)
 torch
 torchvision
