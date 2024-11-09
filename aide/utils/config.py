@@ -65,6 +65,7 @@ class Config(Hashable):
 
     goal: str | None
     eval: str | None
+    example_showcase: str | None
 
     log_dir: Path
     workspace_dir: Path

@@ -18,6 +18,7 @@ copy_data: True
 
 exp_name: null # a random experiment name will be generated if not provided
 
+example_showcase: null # an example code for complex competition
 # settings for code execution
 exec:
   timeout: 3600

@@ -150,6 +150,14 @@ class Agent:
             )
         }
 
+
+    @property
+    def _prompt_example_showcase(self):
+        
+        return {
+            "Reference Code": self.cfg.example_showcase
+        }
+
     def plan_and_code_query(self, prompt, retries=3) -> tuple[str, str]:
         """Generate a natural language plan + code in the same LLM call and split them apart."""
         completion_text = None
@@ -200,6 +208,9 @@ class Agent:
 
         if self.acfg.data_preview:
             prompt["Data Overview"] = self.data_preview
+
+        if self.cfg.example_showcase:
+            prompt["Instructions"] |= self._prompt_example_showcase
 
         plan, code = self.plan_and_code_query(prompt)
         return Node(plan=plan, code=code)
@@ -264,6 +275,10 @@ class Agent:
 
         if self.acfg.data_preview:
             prompt["Data Overview"] = self.data_preview
+
+        # we don't want other code to interrupt
+        # if self.cfg.example_showcase:
+        #     prompt["Example"] |= self._prompt_example_showcase
 
         plan, code = self.plan_and_code_query(prompt)
         return Node(plan=plan, code=code, parent=parent_node)
