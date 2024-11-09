@@ -1,7 +1,8 @@
+import os
 import json
 import re
-
 import black
+from openai import OpenAI
 
 
 def wrap_code(code: str, lang="python") -> str:
@@ -73,8 +74,56 @@ def extract_code(text):
     valid_code_blocks = [
         format_code(c) for c in parsed_codes if is_valid_python_script(c)
     ]
-    return format_code("\n\n".join(valid_code_blocks))
+    formatted_code = format_code("\n\n".join(valid_code_blocks))
+    # we need to check again to ensure nothings wrong
+    prompt = "Read this following python code which is placed between <code> .. CODE .. </code> carefully, determine if it can be execute as it is, if it can be executed return ANSWER: YES, if it has some natural language in front which wasn't wrapped inside a comment block or the main code was wrapped in a python code return ANSWER: NO. Always make sure you end your reply in ANSWER: Yes/No"
+    content = prompt+'\n<code>\n'+formatted_code +'\n</code>'
+    response = fixer_client.chat.completions.create(
+        model="gpt-4o-2024-08-06",
+        messages=[{'role': 'user', 'content': content}],
+        temperature=0.1,
+        max_tokens=1024,
+        top_p=0.95,
+        logprobs=False
+    )
+    res_text = response.choices[0].message.content
+    res_info = {
+        "input": content,
+        "output": res_text,
+        "num_input_tokens": response.usage.prompt_tokens,
+        "num_output_tokens": response.usage.completion_tokens
+    }
+    if 'LOG_RESPONSE' in os.environ and os.environ["LOG_RESPONSE"] == 'True':
+        with open('fixer_gpt-4o-2024-08-06.jsonl', 'a') as fout:
+            fout.write(json.dumps(res_info)+'\n')
+    answer = res_text.split('ANSWER:', maxsplit=1)[-1]
+    if '\n' in answer:
+        answer = answer.split('\n')[0]
+    answer = answer.strip().lower()
+    if answer == 'no':
+        prompt = "Read this following python code which is placed between <code> .. CODE .. </code> carefully, this following code wasn't able to be executed due to format issues, there might be some syntax problem such as text in front which wasn't wrapped in comment block or the code block ``` token wasn't added placed correctly which cause the code cannot be executed immediately when placed inside a .py code. Please extract the main code from the natural response, do not include other natural text or irrelevant result code block which wasn't part of the main code. This main code must be executable when f write into a python file, so DO NOT wrap it in ``` code block as well.\n"
+        content = prompt+'\n<code>\n'+text +'\n</code>'
+        response = fixer_client.chat.completions.create(
+            model="gpt-4o-2024-08-06",
+            messages=[{'role': 'user', 'content': content}],
+            temperature=0.1,
+            max_tokens=9182,
+            top_p=0.95,
+            logprobs=False
+        )
+        res_text = response.choices[0].message.content
+        res_info = {
+            "input": content,
+            "output": res_text,
+            "num_input_tokens": response.usage.prompt_tokens,
+            "num_output_tokens": response.usage.completion_tokens
+        }
+        if 'LOG_RESPONSE' in os.environ and os.environ["LOG_RESPONSE"] == 'True':
+            with open('fixer-rewriter_gpt-4o-2024-08-06.jsonl', 'a') as fout:
+                fout.write(json.dumps(res_info)+'\n')
+        return res_text
 
+    return formatted_code
 
 def extract_text_up_to_code(s):
     """Extract (presumed) natural language text up to the start of the first code block."""

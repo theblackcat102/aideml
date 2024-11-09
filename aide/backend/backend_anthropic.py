@@ -1,7 +1,8 @@
 """Backend for Anthropic API."""
-
 import time
-
+import os
+import pathlib
+from typing import Union
 from .utils import FunctionSpec, OutputType, opt_messages_to_list, backoff_create
 from funcy import notnone, once, select_values
 import anthropic
@@ -67,5 +68,17 @@ def query(
     info = {
         "stop_reason": message.stop_reason,
     }
+    curr_dir = pathlib.Path().absolute()
+    model_name = filtered_kwargs['model']
+    if 'LOG_RESPONSE' in os.environ and os.environ["LOG_RESPONSE"] == 'True':
+        with open(os.path.join(curr_dir,f'anthropic_{model_name}.jsonl'), 'a') as fout:
+            fout.write(json.dumps({
+                'messages': messages,
+                'response': output,
+                'input_tokens': in_tokens,
+                'output_tokens': out_tokens,
+                'stop_reason': message.stop_reason,
+                **filtered_kwargs
+            })+'\n')
 
     return output, req_time, in_tokens, out_tokens, info

@@ -1,16 +1,16 @@
 """Backend for OpenAI API."""
-
+import os
 import json
 import logging
 import time
-
-from .utils import FunctionSpec, OutputType, opt_messages_to_list, backoff_create
-from funcy import notnone, once, select_values
-import openai
+import pathlib
+from .utils import FunctionSpec, OutputType, opt_messages_to_list
+from funcy import notnone, once, retry, select_values
+from openai import OpenAI, RateLimitError
 
 logger = logging.getLogger("aide")
 
-_client: openai.OpenAI = None  # type: ignore
+_client: OpenAI = None  # type: ignore
 
 OPENAI_TIMEOUT_EXCEPTIONS = (
     openai.RateLimitError,
@@ -24,6 +24,8 @@ def _setup_openai_client():
     global _client
     _client = openai.OpenAI(max_retries=0)
 
+
+@retry_exp
 def query(
     system_message: str | None,
     user_message: str | None,
@@ -76,5 +78,16 @@ def query(
         "model": completion.model,
         "created": completion.created,
     }
+    curr_dir = pathlib.Path().absolute()
+    model_name = filtered_kwargs['model']
+    if 'LOG_RESPONSE' in os.environ and os.environ["LOG_RESPONSE"] == 'True':
+        with open(os.path.join(curr_dir,f'openai_{model_name}.jsonl'), 'a') as fout:
+            fout.write(json.dumps({
+                'messages': messages,
+                'response': output,
+                'input_tokens': in_tokens,
+                'output_tokens': out_tokens,
+                **filtered_kwargs
+            })+'\n')
 
     return output, req_time, in_tokens, out_tokens, info

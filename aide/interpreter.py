@@ -123,11 +123,16 @@ class Interpreter:
         sys.stdout = sys.stderr = RedirectQueue(result_outq)
 
     def _run_session(
-        self, code_inq: Queue, result_outq: Queue, event_outq: Queue
+        self, code_inq: Queue, result_outq: Queue, event_outq: Queue, env_vars: dict
     ) -> None:
         self.child_proc_setup(result_outq)
+        os.environ.update(env_vars)
 
-        global_scope: dict = {}
+        global_scope: dict = {
+            '__name__': '__main__',
+            '__file__': self.agent_file_name,
+            'os': os,  # Make sure os is available in the executed code
+        }
         while True:
             code = code_inq.get()
             os.chdir(str(self.working_dir))

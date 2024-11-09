@@ -16,17 +16,49 @@ code_files = {".py", ".sh", ".yaml", ".yml", ".md", ".html", ".xml", ".log", ".r
 plaintext_files = {".txt", ".csv", ".json", ".tsv"} | code_files
 
 
+def try_read_file(file_path: Path) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Attempt to read a file with different encodings.
+    Returns (content, encoding) if successful, (None, None) if failed.
+    """
+    encodings = ['utf-8', 'latin-1', 'cp1252', 'iso-8859-1']
+    
+    for encoding in encodings:
+        try:
+            with open(file_path, 'r', encoding=encoding) as f:
+                content = f.read()
+            return content, encoding
+        except UnicodeDecodeError:
+            continue
+        except Exception as e:
+            print(f"Error reading {file_path}: {str(e)}")
+            return None, None
+    
+    return None, None
+
 def get_file_len_size(f: Path) -> tuple[int, str]:
     """
     Calculate the size of a file (#lines for plaintext files, otherwise #bytes)
     Also returns a human-readable string representation of the size.
     """
     if f.suffix in plaintext_files:
-        num_lines = sum(1 for _ in open(f))
-        return num_lines, f"{num_lines} lines"
+        try:
+            content, encoding = try_read_file(f)
+            if content is not None:
+                num_lines = content.count('\n') + 1
+                return num_lines, f"{num_lines} lines"
+            else:
+                # If we can't read the file as text, fall back to binary size
+                s = f.stat().st_size
+                return s, f"{humanize.naturalsize(s)} (binary)"
+        except Exception as e:
+            print(f"Error processing {f}: {str(e)}")
+            s = f.stat().st_size
+            return s, f"{humanize.naturalsize(s)} (binary)"
     else:
         s = f.stat().st_size
         return s, humanize.naturalsize(s)
+
 
 
 def file_tree(path: Path, depth=0) -> str:
@@ -67,7 +99,12 @@ def preview_csv(p: Path, file_name: str, simple=True) -> str:
     Returns:
         str: the textual preview
     """
-    df = pd.read_csv(p)
+    try:
+        df = pd.read_csv(p)
+        out = []
+        out.append(f"-> {file_name} has {df.shape[0]} rows and {df.shape[1]} columns.")
+    except UnicodeDecodeError:
+        return f"-> {file_name} has failed to open due to unicodedecodeerror, just ignore this one."
 
     out = []
 
@@ -131,7 +168,10 @@ def generate(base_path, include_file_details=True, simple=False):
             file_name = str(fn.relative_to(base_path))
 
             if fn.suffix == ".csv":
-                out.append(preview_csv(fn, file_name, simple=simple))
+                try:
+                    out.append(preview_csv(fn, file_name, simple=simple))
+                except UnicodeDecodeError:
+                    out.append()
             elif fn.suffix == ".json":
                 out.append(preview_json(fn, file_name))
             elif fn.suffix in plaintext_files:
@@ -145,7 +185,7 @@ def generate(base_path, include_file_details=True, simple=False):
     result = "\n\n".join(out)
 
     # if the result is very long we generate a simpler version
-    if len(result) > 6_000 and not simple:
+    if len(result) > 2_000 and not simple:
         return generate(
             base_path, include_file_details=include_file_details, simple=True
         )

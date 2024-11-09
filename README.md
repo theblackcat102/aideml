@@ -8,6 +8,16 @@
 
 AIDE is an LLM agent that generates solutions for machine learning tasks just from natural language descriptions of the task.
 
+Note, this is fork from AIDE where I apply the following changes:
+```
+* Set env LOG_RESPONSE=True if you want to save all model responses
+* Add gpt-4o-0806 as code parser, the current parsing method fails in certain cases
+* Fix data_preview.py to handle unreadable file such as invalid csv
+```
+
+
+
+
 AIDE is the state-of-the-art agent on OpenAI's [MLE-bench](https://arxiv.org/pdf/2410.07095), a benchmark composed of 75 Kaggle machine learning tasks, where we achieved four times more medals compared to the runner-up agent architecture.
 
 In our own benchmark composed of over 60 Kaggle data science competitions, AIDE demonstrated impressive performance, surpassing 50% of Kaggle participants on average (see our [technical report](https://www.weco.ai/blog/technical-report) for details).
